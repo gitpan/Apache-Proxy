@@ -6,7 +6,9 @@
 #include "modules/proxy/mod_proxy.h"
 #endif
 
-MODULE = Apache::Proxy		PACKAGE = Apache::Proxy		
+MODULE = Apache::Proxy		PACKAGE = Apache::Proxy
+
+PROTOTYPES:DISABLE
 
 int
 pass(self, r, uri)
@@ -15,7 +17,7 @@ pass(self, r, uri)
     char *uri
 
     PREINIT:
-    struct cache_req *c = (struct cache_req *)safemalloc(sizeof(struct cache_req));
+    cache_req *c = (cache_req *)safemalloc(sizeof(cache_req));
 
     CODE: 
     c->fp = NULL;
@@ -25,3 +27,22 @@ pass(self, r, uri)
     safefree(c);
     OUTPUT:
     RETVAL
+
+char*
+proxy_hash(self, r, uri)
+    SV *self
+    Apache r
+    char *uri
+
+    PREINIT:
+    void *sconf = r->server->module_config;
+    proxy_server_conf *pconf = (proxy_server_conf *) ap_get_module_config(sconf, &proxy_module);
+    char filename[66];
+    
+    CODE:
+    ap_proxy_hash(uri, filename, pconf->cache.dirlevels, pconf->cache.dirlength);
+    RETVAL = filename;
+
+    OUTPUT:
+    RETVAL
+
